@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import CreateEndpointForm from "../components/create-endpoint.screen";
+import MapperScreen from "../components/mapper-screen";
 
 const Tabs: React.FC = () => {
   const [activeTab, setActiveTab] = useState("create-endpoint");
@@ -29,7 +30,7 @@ const Tabs: React.FC = () => {
 
       <div>
         {activeTab === "create-endpoint" && <CreateEndpointForm />}
-        {/* {activeTab === "mapper" && <MapperScreen />} */}
+        {activeTab === "mapper" && <MapperScreen />}
       </div>
     </div>
   );
