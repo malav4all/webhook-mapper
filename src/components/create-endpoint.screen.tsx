@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import { validateConvoyForm } from "./formValidation/convoyValidation";
+import Toast from "./toast";
 
 const CreateEndpointForm: React.FC<{
   onSuccess: (data: {
@@ -150,7 +151,10 @@ const CreateEndpointForm: React.FC<{
         }
       );
       if (response.data.status) {
-        toast.success(response.data.message);
+        Toast.success({
+          message: response.data.message,
+        });
+        // Toast.success(response.data.message);
         const responseData = response.data.data;
         const apiKey = responseData.authentication.api_key.header_value.replace(
           "Bearer ",
@@ -162,13 +166,10 @@ const CreateEndpointForm: React.FC<{
           endpointId: responseData.uid,
         });
       }
-      // if (response.data.status) {
-      //   toast.success(response.data.message);
-      //   // setEndpointUid(response.data.data.uid);
-      // }
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to create endpoint");
+      Toast.error({
+        message: error,
+      });
     }
   };
 

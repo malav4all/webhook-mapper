@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { validateMapperForm } from "./formValidation/convoyValidation";
 import { collectionOptions, Track, Trip } from "./helper/formFieldsConfig";
-// import { RiDeleteBin6Line } from "react-icons/ri";
+import { RiDeleteBin6Line } from "react-icons/ri";
+import Toast from "./toast";
 
 const MapperScreen: React.FC<{
   mapperValues: { projectId: string; apiKey: string; endpointId: string };
@@ -214,9 +215,14 @@ const MapperScreen: React.FC<{
       }
 
       const result = await response.json();
-      console.log("API Response:", result);
+      Toast.success({
+        message: result.message,
+      });
+      // console.log("API Response:", result);
     } catch (error) {
-      console.error("Error submitting form:", error);
+      Toast.error({
+        message: error,
+      });
     }
     // Handle form submission logic, such as making an API call with the payload
   };
@@ -484,7 +490,7 @@ const MapperScreen: React.FC<{
                       onClick={() => handleDeleteAddOnField(key)}
                       className="inline-flex justify-center py-2 text-md px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      {/* <RiDeleteBin6Line /> */}
+                      <RiDeleteBin6Line />
                     </button>
                   </div>
                 ))}
