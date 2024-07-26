@@ -1,9 +1,17 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const CreateEndpointForm: React.FC = () => {
+import { validateConvoyForm } from "./formValidation/convoyValidation";
+
+const CreateEndpointForm: React.FC<{
+  onSuccess: (data: {
+    projectId: string;
+    apiKey: string;
+    endpointId: string;
+  }) => void;
+}> = ({ onSuccess }) => {
   const [authMethod, setAuthMethod] = useState("");
   const [authValues, setAuthValues] = useState({
     useName: "",
@@ -11,6 +19,7 @@ const CreateEndpointForm: React.FC = () => {
     tokenValue: "",
     basicAuthToken: "",
   });
+  const [errors, setErrors] = useState<any>({});
   const [generatedToken, setGeneratedToken] = useState("");
   const [formValues, setFormValues] = useState({
     convoyUrl: "https://convoy.imztech.io",
@@ -28,18 +37,26 @@ const CreateEndpointForm: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
+    setFormValues((prevValues) => ({
+      ...prevValues,
       [name]: value,
-    });
+    }));
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      [name]: "",
+    }));
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setFormValues({
-      ...formValues,
+    setFormValues((prevValues) => ({
+      ...prevValues,
       [name]: checked,
-    });
+    }));
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      [name]: "",
+    }));
   };
 
   const handleAuthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -52,6 +69,11 @@ const CreateEndpointForm: React.FC = () => {
     }); // Reset auth values on change
     setGeneratedToken("");
     setFormValues({ ...formValues, secret: "" });
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      authMethod: "",
+      secret: "",
+    }));
   };
 
   const handleAuthValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +109,13 @@ const CreateEndpointForm: React.FC = () => {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { isValid, errors } = validateConvoyForm(formValues, authMethod);
+    setErrors(errors);
+    if (!isValid) {
+      return;
+    }
     const payload = {
       advanced_signatures: true,
       appID: formValues.projectId, // Using the projectId from form values
@@ -121,11 +149,23 @@ const CreateEndpointForm: React.FC = () => {
           },
         }
       );
-
       if (response.data.status) {
         toast.success(response.data.message);
-        // setEndpointUid(response.data.data.uid);
+        const responseData = response.data.data;
+        const apiKey = responseData.authentication.api_key.header_value.replace(
+          "Bearer ",
+          ""
+        );
+        onSuccess({
+          projectId: responseData.project_id,
+          apiKey: apiKey,
+          endpointId: responseData.uid,
+        });
       }
+      // if (response.data.status) {
+      //   toast.success(response.data.message);
+      //   // setEndpointUid(response.data.data.uid);
+      // }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to create endpoint");
@@ -137,7 +177,9 @@ const CreateEndpointForm: React.FC = () => {
       <h2 className="text-2xl font-bold mb-4">Convoy Configuration Form</h2>
       <form className="grid grid-cols-2 gap-6" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-gray-700">Convoy URL</label>
+          <label className="block text-gray-700">
+            Convoy URL<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="convoyUrl"
@@ -146,10 +188,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="http://103.20.214.75:5005"
           />
+          {errors.convoyUrl && (
+            <p className="text-red-500 text-xs mt-1">{errors.convoyUrl}</p>
+          )}
         </div>
         <div>
           <label className="block text-gray-700">
             Rate Limit Duration (in seconds)
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -159,9 +205,16 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Rate Limit Duration"
           />
+          {errors.rateLimitDuration && (
+            <p className="text-red-500 text-xs mt-1">
+              {errors.rateLimitDuration}
+            </p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Webhook URL</label>
+          <label className="block text-gray-700">
+            Webhook URL<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="webhookUrl"
@@ -170,9 +223,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Webhook URL"
           />
+          {errors.webhookUrl && (
+            <p className="text-red-500 text-xs mt-1">{errors.webhookUrl}</p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Owner ID</label>
+          <label className="block text-gray-700">
+            Owner ID<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="ownerId"
@@ -181,9 +239,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="01J3A1HF8GWDJF0Z1XQGDKN8FE"
           />
+          {errors.ownerId && (
+            <p className="text-red-500 text-xs mt-1">{errors.ownerId}</p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Support Email</label>
+          <label className="block text-gray-700">
+            Support Email<span className="text-red-500">*</span>
+          </label>
           <input
             type="email"
             name="supportEmail"
@@ -192,9 +255,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Support Email"
           />
+          {errors.supportEmail && (
+            <p className="text-red-500 text-xs mt-1">{errors.supportEmail}</p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Name</label>
+          <label className="block text-gray-700">
+            Name<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="name"
@@ -203,9 +271,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Name"
           />
+          {errors.name && (
+            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Project ID</label>
+          <label className="block text-gray-700">
+            Project ID<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="projectId"
@@ -214,10 +287,13 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Project ID"
           />
+          {errors.projectId && (
+            <p className="text-red-500 text-xs mt-1">{errors.projectId}</p>
+          )}
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-2 text-sm">
-            Authentication
+            Authentication<span className="text-red-500">*</span>
           </label>
           <select
             id="authMethod"
@@ -230,6 +306,9 @@ const CreateEndpointForm: React.FC = () => {
             <option value="BasicAuth">Basic Auth</option>
             <option value="Bearer">Token</option>
           </select>
+          {errors.authMethod && (
+            <p className="text-red-500 text-xs mt-1">{errors.authMethod}</p>
+          )}
           {authMethod === "BasicAuth" && (
             <div className="mt-4 space-y-4">
               <input
@@ -241,6 +320,9 @@ const CreateEndpointForm: React.FC = () => {
                 placeholder="Username"
                 aria-label="Username"
               />
+              {errors.secret && !authValues.useName && (
+                <p className="text-red-500 text-xs mt-1">{errors.secret}</p>
+              )}
               <input
                 type="password"
                 name="password"
@@ -250,6 +332,9 @@ const CreateEndpointForm: React.FC = () => {
                 placeholder="Password"
                 aria-label="Password"
               />
+              {errors.secret && !authValues.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.secret}</p>
+              )}
             </div>
           )}
           {authMethod === "Bearer" && (
@@ -263,6 +348,9 @@ const CreateEndpointForm: React.FC = () => {
                 placeholder="Token"
                 aria-label="Token"
               />
+              {errors.secret && !authValues.tokenValue && (
+                <p className="text-red-500 text-xs mt-1">{errors.secret}</p>
+              )}
               {generatedToken && (
                 <div className="mt-4 p-2 border border-gray-300 rounded-md shadow-sm">
                   <label className="block text-gray-700 font-medium mb-2 text-sm">
@@ -297,7 +385,9 @@ const CreateEndpointForm: React.FC = () => {
           />
         </div>
         <div>
-          <label className="block text-gray-700">API Key</label>
+          <label className="block text-gray-700">
+            API Key<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="apiKey"
@@ -306,9 +396,14 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="API Key"
           />
+          {errors.apiKey && (
+            <p className="text-red-500 text-xs mt-1">{errors.apiKey}</p>
+          )}
         </div>
         <div>
-          <label className="block text-gray-700">Rate Limit</label>
+          <label className="block text-gray-700">
+            Rate Limit<span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             name="rateLimit"
@@ -317,6 +412,9 @@ const CreateEndpointForm: React.FC = () => {
             className="w-full mt-1 p-2 border rounded"
             placeholder="Rate Limit"
           />
+          {errors.rateLimit && (
+            <p className="text-red-500 text-xs mt-1">{errors.rateLimit}</p>
+          )}
         </div>
       </form>
       <div className="flex justify-center">

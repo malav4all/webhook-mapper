@@ -4,7 +4,19 @@ import MapperScreen from "../components/mapper-screen";
 
 const Tabs: React.FC = () => {
   const [activeTab, setActiveTab] = useState("create-endpoint");
-
+  const [mapperValues, setMapperValues] = useState({
+    projectId: "",
+    apiKey: "",
+    endpointId: "",
+  });
+  const switchToMapperTab = (data: {
+    projectId: string;
+    apiKey: string;
+    endpointId: string;
+  }) => {
+    setMapperValues(data);
+    setActiveTab("mapper");
+  };
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-center space-x-4 mb-4">
@@ -29,8 +41,10 @@ const Tabs: React.FC = () => {
       </div>
 
       <div>
-        {activeTab === "create-endpoint" && <CreateEndpointForm />}
-        {activeTab === "mapper" && <MapperScreen />}
+        {activeTab === "create-endpoint" && (
+          <CreateEndpointForm onSuccess={switchToMapperTab} />
+        )}
+        {activeTab === "mapper" && <MapperScreen mapperValues={mapperValues} />}
       </div>
     </div>
   );

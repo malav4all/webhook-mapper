@@ -1,130 +1,11 @@
-import React, { useState } from "react";
-import { RiDeleteBin6Line } from "react-icons/ri";
+import React, { useEffect, useState } from "react";
+import { validateMapperForm } from "./formValidation/convoyValidation";
+import { collectionOptions, Track, Trip } from "./helper/formFieldsConfig";
+// import { RiDeleteBin6Line } from "react-icons/ri";
 
-const Track: any = {
-  geocode: "",
-  lat: "",
-  lng: "",
-  accid: "",
-  deviceid: "",
-  vehnum: "",
-  imei: "",
-  alt: "",
-  disha: "",
-  tamp: "",
-  speed: "",
-  ign: "",
-  fuel: "",
-  load: "",
-  imb: "",
-  ac: "",
-  battery: "",
-  lock: "",
-  rfid: "",
-  reason: "",
-  pktype: "",
-  gps: "",
-  satellites: "",
-  orgts: "",
-  cts: "",
-  powsts: "",
-  devicetypeid: "",
-  address: "",
-  accuracy: "",
-  orgmillis: "",
-  unlockstatus: "",
-  batchg: "",
-};
-
-const Trip: any = {
-  drivername: "",
-  permitendDate: "",
-  transitType: "",
-  permitstartDate: "",
-  permitno: "",
-  via: "",
-  consigneeename: "",
-  vehnum: "",
-  material: "",
-  qty: "",
-  sms: "",
-  imei: "",
-  driverphone: "",
-  vehtype: "",
-  consignorname: "",
-};
-
-const collectionOptions = [
-  "ADN_RAWDATA",
-  "ATM_RAWDATA",
-  "ATM_TRACKDATA",
-  "BHEX_RAWDATA",
-  "BHEX_TRACKDATA",
-  "BSFC_ALERTDATA",
-  "BSFC_RAWDATA",
-  "BSFC_RESPDATA",
-  "BSFC_TRACKDATA",
-  "BSNL_RAWDATA",
-  "COMMON_CONFIG",
-  "DLVR_RAWDATA",
-  "DLVR_TRACKDATA",
-  "ELK_ALERTDATA",
-  "ELK_RAWDATA",
-  "ELK_RESPDATA",
-  "ELK_TRACKDATA",
-  "EX_ALERTDATA",
-  "EX_RAWDATA",
-  "EX_RESPDATA",
-  "EX_TRACKDATA",
-  "GEO_HUBS",
-  "GSCS_ALERTDATA",
-  "GSCS_RAWDATA",
-  "GSCS_RESPDATA",
-  "GSCS_TRACKDATA",
-  "IMZ_ALERTDATA",
-  "IMZ_PUSH_TO_CLIENT",
-  "IMZ_RAWDATA",
-  "IMZ_RESPDATA",
-  "IMZ_TRACKDATA",
-  "IMZ_TRIPS",
-  "LOCATIONS",
-  "LORA_ALERTDATA",
-  "LORA_TRACKDATA",
-  "MATERIALS",
-  "NTA_ALERTDATA",
-  "NTA_RAWDATA",
-  "NTA_RESPDATA",
-  "NTA_TRACKDATA",
-  "PRAJ_ALERTDATA",
-  "PRAJ_GEN_REPORT",
-  "PRAJ_NONFUNC_REPORT",
-  "PRAJ_RAWDATA",
-  "PRAJ_REPORT",
-  "PRAJ_TRACKDATA",
-  "PUSH_TO_CLIENT",
-  "ROUTE",
-  "ROUTE_GEO",
-  "TM_ALERTDATA",
-  "TM_RAWDATA",
-  "TM_TRACKDATA",
-  "TRIPS",
-  "TST_RAWDATA",
-  "TST_TRACKDATA",
-  "UPEX_ALERTDATA",
-  "UPEX_RAWDATA",
-  "UPEX_RESPDATA",
-  "UPEX_TRACKDATA",
-  "USER_RIGHTS",
-  "WBEX_ALERTDATA",
-  "WBEX_RAWDATA",
-  "_RAWDATA",
-  "ecom_tracks",
-  "loadcalibration",
-  "stops",
-  "trips",
-];
-
-const MapperScreen: React.FC = () => {
+const MapperScreen: React.FC<{
+  mapperValues: { projectId: string; apiKey: string; endpointId: string };
+}> = ({ mapperValues }) => {
   const [formValues, setFormValues] = useState({
     projectId: "",
     apiKey: "",
@@ -134,7 +15,14 @@ const MapperScreen: React.FC = () => {
     pushData: "allTimes",
     wrapper: "",
   });
-
+  useEffect(() => {
+    setFormValues((prevValues) => ({
+      ...prevValues,
+      projectId: mapperValues.projectId,
+      apiKey: mapperValues.apiKey,
+      endpointId: mapperValues.endpointId,
+    }));
+  }, [mapperValues]);
   const [checkedFields, setCheckedFields] = useState<{
     [key: string]: boolean;
   }>({});
@@ -149,21 +37,30 @@ const MapperScreen: React.FC = () => {
   const [addOnFieldValues, setAddOnFieldValues] = useState<{
     [key: string]: string;
   }>({});
+  const [errors, setErrors] = useState<any>({});
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
+    setFormValues((prevValues) => ({
+      ...prevValues,
       [name]: value,
-    });
+    }));
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      [`mapper${name.charAt(0).toUpperCase() + name.slice(1)}`]: "",
+    }));
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormValues({
-      ...formValues,
+    setFormValues((prevValues) => ({
+      ...prevValues,
       [name]: value,
-    });
+    }));
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      [`mapper${name.charAt(0).toUpperCase() + name.slice(1)}`]: "",
+    }));
   };
 
   const handleCheckboxChange = (field: string) => {
@@ -226,14 +123,28 @@ const MapperScreen: React.FC = () => {
   };
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormValues({
-      ...formValues,
+    setFormValues((prevValues) => ({
+      ...prevValues,
       pushData: e.target.value,
-    });
+    }));
+    setErrors((prevErrors: any) => ({
+      ...prevErrors,
+      pushData: "",
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { isValid, errors } = validateMapperForm(formValues);
+    setErrors(errors);
+    if (!isValid) {
+      return;
+    }
+
+    const accountIdArray = formValues.accountId
+      .split(",")
+      .map((id) => id.trim());
+
     const tripDataMapper: {
       [key: string]: { enabled: boolean; newKey: string };
     } = {};
@@ -276,7 +187,7 @@ const MapperScreen: React.FC = () => {
     }
 
     const payload = {
-      account: formValues.accountId,
+      account: accountIdArray,
       collectionName: formValues.collectionName,
       convoyProjectId: formValues.projectId,
       convoyEndpointId: formValues.endpointId,
@@ -316,7 +227,9 @@ const MapperScreen: React.FC = () => {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="flex gap-4">
           <div className="flex-1">
-            <label className="block text-gray-700">Convoy Project ID</label>
+            <label className="block text-gray-700">
+              Convoy Project ID<span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="projectId"
@@ -325,9 +238,16 @@ const MapperScreen: React.FC = () => {
               className="w-full mt-1 p-2 border rounded"
               placeholder="Project ID"
             />
+            {errors.mapperProjectId && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperProjectId}
+              </p>
+            )}
           </div>
           <div className="flex-1">
-            <label className="block text-gray-700">Convoy API Key</label>
+            <label className="block text-gray-700">
+              Convoy API Key<span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="apiKey"
@@ -336,9 +256,14 @@ const MapperScreen: React.FC = () => {
               className="w-full mt-1 p-2 border rounded"
               placeholder="API Key"
             />
+            {errors.mapperApiKey && (
+              <p className="text-red-500 text-xs mt-1">{errors.mapperApiKey}</p>
+            )}
           </div>
           <div className="flex-1">
-            <label className="block text-gray-700">Convoy Endpoint ID</label>
+            <label className="block text-gray-700">
+              Convoy Endpoint ID<span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="endpointId"
@@ -347,20 +272,35 @@ const MapperScreen: React.FC = () => {
               className="w-full mt-1 p-2 border rounded"
               placeholder="Endpoint ID"
             />
+            {errors.mapperEndpointId && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperEndpointId}
+              </p>
+            )}
           </div>
           <div className="flex-1">
-            <label className="block text-gray-700">Account ID</label>
+            <label className="block text-gray-700">
+              Account ID<span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="accountId"
               value={formValues.accountId}
               onChange={handleInputChange}
               className="w-full mt-1 p-2 border rounded"
-              placeholder="Account ID"
+              placeholder="Account ID (comma separated)"
             />
+            {errors.mapperAccountId && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperAccountId}
+              </p>
+            )}
           </div>
+
           <div className="flex-1">
-            <label className="block text-gray-700">Collection Name</label>
+            <label className="block text-gray-700">
+              Collection Name<span className="text-red-500">*</span>
+            </label>
             <select
               name="collectionName"
               value={formValues.collectionName}
@@ -374,9 +314,16 @@ const MapperScreen: React.FC = () => {
                 </option>
               ))}
             </select>
+            {errors.mapperCollectionName && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperCollectionName}
+              </p>
+            )}
           </div>
           <div className="flex-1">
-            <label className="block text-gray-700">Wrapper</label>
+            <label className="block text-gray-700">
+              Wrapper<span className="text-red-500">*</span>
+            </label>
             <select
               name="wrapper"
               value={formValues.wrapper}
@@ -390,9 +337,16 @@ const MapperScreen: React.FC = () => {
                 </option>
               ))}
             </select>
+            {errors.mapperWrapper && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperWrapper}
+              </p>
+            )}
           </div>
           <div className="flex-1 flex flex-col">
-            <label className="block text-gray-700">Push Data</label>
+            <label className="block text-gray-700">
+              Push Data<span className="text-red-500">*</span>
+            </label>
             <div className="flex mt-1">
               <label className="mr-4 flex items-center">
                 <input
@@ -417,6 +371,11 @@ const MapperScreen: React.FC = () => {
                 During Trip
               </label>
             </div>
+            {errors.mapperPushData && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.mapperPushData}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex gap-4">
@@ -525,7 +484,7 @@ const MapperScreen: React.FC = () => {
                       onClick={() => handleDeleteAddOnField(key)}
                       className="inline-flex justify-center py-2 text-md px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      <RiDeleteBin6Line />
+                      {/* <RiDeleteBin6Line /> */}
                     </button>
                   </div>
                 ))}
@@ -582,7 +541,7 @@ const MapperScreen: React.FC = () => {
             type="submit"
             className="mt-4 text-center bg-blue-500 text-white p-2 rounded"
           >
-            Save Configuration
+            Submit
           </button>
         </div>
       </form>
